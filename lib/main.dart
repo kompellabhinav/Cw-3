@@ -1,5 +1,5 @@
+import 'dart:async'; // Import dart:async for Timer
 import 'package:flutter/material.dart';
-import 'dart:async';
 
 void main() {
   runApp(MaterialApp(
@@ -18,30 +18,57 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
   int hungerLevel = 50;
   late TextEditingController _nameController;
   late Timer _hungerTimer;
+  late Timer _winConditionTimer;
+  bool _isGameOver = false;
+  bool _hasWon = false;
+  int happinessAboveThresholdDuration = 0; // Track time happiness is above 80
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController();
+
+    // Start the timer to increase hunger every 30 seconds
     _hungerTimer = Timer.periodic(Duration(seconds: 30), (timer) {
       setState(() {
         hungerLevel = (hungerLevel + 5).clamp(0, 100);
         if (hungerLevel >= 100) {
           happinessLevel = (happinessLevel - 20).clamp(0, 100);
         }
+        _checkLossCondition();
       });
+    });
+
+    // Start the timer for the win condition check every second
+    _winConditionTimer = Timer.periodic(Duration(seconds: 1), (timer) {
+      if (happinessLevel > 80) {
+        happinessAboveThresholdDuration++;
+        if (happinessAboveThresholdDuration >= 180) {
+          // 3 minutes (180 seconds)
+          setState(() {
+            _hasWon = true;
+            _hungerTimer.cancel();
+            _winConditionTimer.cancel();
+          });
+        }
+      } else {
+        happinessAboveThresholdDuration =
+            0; // Reset duration if happiness falls below 80
+      }
     });
   }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _hungerTimer.cancel();
+    _hungerTimer.cancel(); // Cancel the timer to prevent memory leaks
+    _winConditionTimer.cancel();
     super.dispose();
   }
 
 // Function to increase happiness and update hunger when playing with the pet
   void _playWithPet() {
+    if (_isGameOver || _hasWon) return; // Prevent interactions after game ends
     setState(() {
       happinessLevel = (happinessLevel + 10).clamp(0, 100);
       _updateHunger();
@@ -50,6 +77,7 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
 
 // Function to decrease hunger and update happiness when feeding the pet
   void _feedPet() {
+    if (_isGameOver || _hasWon) return; // Prevent interactions after game ends
     setState(() {
       hungerLevel = (hungerLevel - 10).clamp(0, 100);
       _updateHappiness();
@@ -63,6 +91,7 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
     } else {
       happinessLevel = (happinessLevel + 10).clamp(0, 100);
     }
+    _checkLossCondition();
   }
 
 // Increase hunger level slightly when playing with the pet
@@ -71,6 +100,18 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
     if (hungerLevel > 100) {
       hungerLevel = 100;
       happinessLevel = (happinessLevel - 20).clamp(0, 100);
+    }
+    _checkLossCondition();
+  }
+
+// Check if the game is lost
+  void _checkLossCondition() {
+    if (hungerLevel == 100 && happinessLevel <= 10) {
+      setState(() {
+        _isGameOver = true;
+        _hungerTimer.cancel();
+        _winConditionTimer.cancel();
+      });
     }
   }
 
@@ -98,7 +139,11 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
               ),
               const SizedBox(height: 16.0),
               Text(
-                'Happiness Level: $happinessLevel',
+                _isGameOver
+                    ? 'Game Over!'
+                    : _hasWon
+                        ? 'You Win!'
+                        : 'Happiness Level: $happinessLevel',
                 style: const TextStyle(fontSize: 20.0),
               ),
               const SizedBox(height: 16.0),
@@ -113,21 +158,27 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
                   Container(
                     height: 100,
                     width: 100,
-                    color: happinessLevel < 30
-                        ? Colors.red
-                        : happinessLevel > 70
-                            ? Colors.green
-                            : Colors.yellow,
+                    color: _isGameOver
+                        ? Colors.black
+                        : happinessLevel < 30
+                            ? Colors.red
+                            : happinessLevel > 70
+                                ? Colors.green
+                                : Colors.yellow,
                   ),
                   const SizedBox(
                     width: 30,
                   ),
                   Text(
-                    happinessLevel < 30
-                        ? "Unhappy"
-                        : happinessLevel > 70
-                            ? "Happy"
-                            : "Neutral",
+                    _isGameOver
+                        ? "Game Over"
+                        : _hasWon
+                            ? "You Win!"
+                            : happinessLevel < 30
+                                ? "Unhappy"
+                                : happinessLevel > 70
+                                    ? "Happy"
+                                    : "Neutral",
                     style: const TextStyle(fontSize: 24),
                   ),
                 ],
