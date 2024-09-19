@@ -43,7 +43,7 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
     _winConditionTimer = Timer.periodic(Duration(seconds: 1), (timer) {
       if (happinessLevel > 80) {
         happinessAboveThresholdDuration++;
-        if (happinessAboveThresholdDuration >= 180) {
+        if (happinessAboveThresholdDuration >= 30) {
           // 3 minutes (180 seconds)
           setState(() {
             _hasWon = true;
@@ -158,13 +158,10 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
                   Container(
                     height: 100,
                     width: 100,
-                    color: _isGameOver
-                        ? Colors.black
-                        : happinessLevel < 30
-                            ? Colors.red
-                            : happinessLevel > 70
-                                ? Colors.green
-                                : Colors.yellow,
+                    child: happinessLevel < 30 ? const Image(image: AssetImage("lib/assets/sad.png"))
+                      : happinessLevel > 70 ? const Image(image: AssetImage("lib/assets/happy.png"))
+                      : (happinessLevel >= 30 && happinessLevel < 50) ? const Image(image: AssetImage("lib/assets/angry.png"),) 
+                      : const Image(image: AssetImage("lib/assets/dog.png")),
                   ),
                   const SizedBox(
                     width: 30,
@@ -175,10 +172,10 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
                         : _hasWon
                             ? "You Win!"
                             : happinessLevel < 30
-                                ? "Unhappy"
+                                ? "Unhappy 😢"
                                 : happinessLevel > 70
-                                    ? "Happy"
-                                    : "Neutral",
+                                    ? "Happy 😃"
+                                    : (happinessLevel >= 30 && happinessLevel < 50) ? "Angry 😡" : "Neutral 🫤",
                     style: const TextStyle(fontSize: 24),
                   ),
                 ],

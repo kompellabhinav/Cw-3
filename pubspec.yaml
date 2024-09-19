@@ -16,4 +16,10 @@ dev_dependencies:
   flutter_lints: ^2.0.0
 
 flutter:
+  assets:
+    - lib/assets/dog.png
+    - lib/assets/happy.png
+    - lib/assets/sad.png
+    - lib/assets/angry.png
+
   uses-material-design: true
